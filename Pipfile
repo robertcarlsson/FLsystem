@@ -10,6 +10,7 @@ pylint = "*"
 scikit-learn = "*"
 numpy = "*"
 matplotlib = "*"
+idx2numpy = "*"
 
 [requires]
 python_version = "3.7"

@@ -20,7 +20,7 @@ def svm_iterations(i):
         samples=samples,
         test_ratio=0.2,
         n_features=2,
-        random_seed=i
+        random_seed=i*2
     )
 
     X_list = np.split(X, n_svm)
@@ -63,7 +63,6 @@ def svm_iterations(i):
     global_svm_avg.partial_fit(coef=coef, intercept=intercept)
     global_svm_high.partial_fit(coef=svm_list[high_index].clf.coef_, intercept=svm_list[high_index].clf.intercept_)
     global_svm.partial_fit()
-
     #print("Index: ", high_index)
     #for svm in scores:
     #    print('Sub-SVM: ', svm)
@@ -88,7 +87,7 @@ print(all_scores.shape)
 #plt.plot(x, all_scores[:,1:2])
 #plt.plot(x, all_scores[:,2:3])
 #plt.plot(x, all_scores[:,3:4])
-plt.plot(x, all_scores[:,4:5], 'r--')
+plt.plot(x, all_scores[:,4:5], 'ro')
 plt.plot(x, all_scores[:,5:6], 'bs')
 plt.plot(x, all_scores[:,6:7], 'g^')
 
@@ -100,4 +99,6 @@ avg.append(np.mean(all_scores[:,6:7]))
 
 for a in avg:
     print(a)
+plt.ylabel('Accuracy')
+plt.xlabel('Random seed for iteration')
 plt.show()

@@ -31,10 +31,9 @@ def svm_iterations(i):
     for i in range(n_svm):
         svm_list.append(SVM(X_list[i], y_list[i]))
 
-
     scores = []
     for svm in svm_list:
-        svm.partial_fit()
+        svm.initial_fit()
         scores.append(svm.get_score(X_test, y_test))
 
     high_index = np.where(scores == np.amax(scores))[0][0]
@@ -47,7 +46,7 @@ def svm_iterations(i):
     #print(intercept)
 
     for svm in svm_list[1:]:
-        coef += svm.clf.coef_
+        coef += svm.clf.coef_   
         intercept += svm.clf.intercept_
     coef = coef / n_svm
     intercept = intercept / n_svm
@@ -60,9 +59,9 @@ def svm_iterations(i):
     global_svm = SVM(X, y)
 
 
-    global_svm_avg.partial_fit(coef=coef, intercept=intercept)
-    global_svm_high.partial_fit(coef=svm_list[high_index].clf.coef_, intercept=svm_list[high_index].clf.intercept_)
-    global_svm.partial_fit()
+    global_svm_avg.initial_fit(coef=coef, intercept=intercept)
+    global_svm_high.initial_fit(coef=svm_list[high_index].clf.coef_, intercept=svm_list[high_index].clf.intercept_)
+    global_svm.initial_fit()
     #print("Index: ", high_index)
     #for svm in scores:
     #    print('Sub-SVM: ', svm)

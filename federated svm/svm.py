@@ -7,11 +7,11 @@ from copy import deepcopy
 from sklearn import datasets
 from sklearn import linear_model
 
-from generator import make_class_dataset, make_class_dataset_test
+from test.generator import make_class_dataset, make_class_dataset_test
 
 
 class SVM:
-    def __init__(self, X=None, y=None, seed=1338):
+    def __init__(self, X=None, y=None, seed=1338, n_iter=1):
         self.X = X
         self.y = y
         self.clf = linear_model.SGDClassifier(
@@ -19,10 +19,10 @@ class SVM:
             max_iter=1, 
             tol=0.0001, 
             random_state=seed,
-            warm_start=True,
             shuffle=True,
+            warm_start=True,   
             )
-        self.n_iter = 1
+        self.n_iter = n_iter
         self.score = 0
 
     def __str__(self):
@@ -53,28 +53,18 @@ class SVM:
             return self.clf.score(X_test, y_test)
 
 class Federated_SVM:
-    def __init__(self, X_test, y_test, epoch_iterations=1):
+    def __init__(self, X_test, y_test, epoch_iterations=1, global_aggregation=True):
         # Static test suite so it is the same for all evaluations
         self.X_test = X_test
         self.y_test = y_test
         self.epoch_iterations = epoch_iterations
-
-        self.global_clf = linear_model.SGDClassifier(
-            alpha=0.001, 
-            max_iter=1, 
-            tol=0.0001, 
-            random_state=1,
-            warm_start=True,
-            shuffle=True,
-            )
+        self.global_aggregation = global_aggregation
 
         self.global_coef_ = None
         self.global_intercept_ = None
 
         self.federation = np.array([])
         self.all_scores = None
-
-
         
     def __str__(self):
         return 'Federation quality not yet evaluated'
@@ -82,13 +72,33 @@ class Federated_SVM:
     def add_participant(self, participant):
         self.federation = np.append(self.federation, participant)
 
+    def aggregate_models(self):
+        temp_coef = self.federation[0].clf.coef_
+        temp_intercept = self.federation[0].clf.intercept_
+        
+        #: Calculate the federated avarage and update the global model
+        for svm in self.federation[1:]:
+            temp_coef += svm.clf.coef_
+            temp_intercept += svm.clf.intercept_
+        
+        temp_coef /= len(self.federation)
+        temp_intercept /= len(self.federation)
+
+        #: Set an initial value if global model is None
+        if self.global_coef_ is None and self.global_intercept_ is None:
+            self.global_coef_ = temp_coef
+            self.global_intercept_ = temp_intercept
+        else:
+            self.global_coef_ = (self.global_coef_ + temp_coef) / 2
+            self.global_intercept_ = (self.global_intercept_ + temp_intercept) / 2
+
     def run_epoch(self):
          
         epoch_local_scores = np.array([])
         
-        # Initialize the run for the participants
-        # Then run the SGD iterations for n times
-        # get the local accuracy and send to server
+        #: Initialize the run for the participants
+        #: Then run the SGD iterations for n times
+        #: get the local accuracy and send to server
         for svm in self.federation:
             svm.initial_fit(
                 coef=self.global_coef_,
@@ -97,31 +107,15 @@ class Federated_SVM:
             svm.run_SGD_iterations()
             epoch_local_scores  = np.append(epoch_local_scores, svm.get_score(self.X_test, self.y_test))
 
-        temp_coef = self.federation[0].clf.coef_
-        temp_intercept = self.federation[0].clf.intercept_
-        
-
-        # calculate the federated avarage and update the global model
-        for svm in self.federation[1:]:
-            temp_coef += svm.clf.coef_
-            temp_intercept += svm.clf.intercept_
-        
-        temp_coef /= len(self.federation)
-        temp_intercept /= len(self.federation)
-
-        if self.global_coef_ is None and self.global_intercept_ is None:
-            self.global_coef_ = temp_coef
-            self.global_intercept_ = temp_intercept
-        else:
-            self.global_coef_ = (self.global_coef_ + temp_coef) / 2
-            self.global_intercept_ = (self.global_intercept_ + temp_intercept) / 2
-
-
-        # collect the scores
+        #: Collect the scores for plotting
         if self.all_scores is None:
             self.all_scores = np.array([epoch_local_scores])
         else:
             self.all_scores = np.append(self.all_scores, np.array([epoch_local_scores]), axis=0)
+
+        #: Create/Update the aggregated global model
+        if self.global_aggregation:
+            self.aggregate_models()
 
     def run_eon(self, n=1):
         while(n > 0):

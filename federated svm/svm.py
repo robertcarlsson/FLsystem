@@ -15,12 +15,16 @@ class SVM:
         self.X = X
         self.y = y
         self.clf = linear_model.SGDClassifier(
-            alpha=0.001, 
+            alpha=0.0001, 
             max_iter=1, 
-            tol=0.0001, 
+            tol=0.001, 
             random_state=seed,
             shuffle=True,
-            warm_start=True,   
+            warm_start=False,
+            early_stopping=False,
+            n_iter_no_change=5,
+            learning_rate='adaptive',
+            eta0=0.01
             )
         self.n_iter = n_iter
         self.score = 0
@@ -53,8 +57,10 @@ class SVM:
             return self.clf.score(X_test, y_test)
 
 class Federated_SVM:
-    def __init__(self, X_test, y_test, epoch_iterations=1, global_aggregation=True):
+    def __init__(self, X, y, X_test, y_test, epoch_iterations=1, global_aggregation=True):
         # Static test suite so it is the same for all evaluations
+        self.X = X
+        self.y = y
         self.X_test = X_test
         self.y_test = y_test
         self.epoch_iterations = epoch_iterations
@@ -66,6 +72,19 @@ class Federated_SVM:
         self.federation = np.array([])
         self.all_scores = None
         
+        self.global_model_scores = []
+        self.n_iterations = 0
+        self.global_clf = linear_model.SGDClassifier(
+            alpha=0.0001, 
+            max_iter=1, 
+            tol=0.001, 
+            random_state=1,
+            shuffle=True,
+            warm_start=False,
+            early_stopping=True,
+            n_iter_no_change=5,
+            )
+
     def __str__(self):
         return 'Federation quality not yet evaluated'
 
@@ -91,6 +110,19 @@ class Federated_SVM:
         else:
             self.global_coef_ = (self.global_coef_ + temp_coef) / 2
             self.global_intercept_ = (self.global_intercept_ + temp_intercept) / 2
+        
+        self.global_clf.fit(
+            X=self.X, 
+            y=self.y, 
+            coef_init=self.global_coef_,
+            intercept_init=self.global_intercept_)
+        self.n_iterations += 1
+        self.global_model_scores.append(
+            self.global_clf.score(
+                self.X_test,
+                self.y_test))
+        #self.global_clf.coef_ = self.global_clf
+        #self.global_clf.intercept_ = self.global_intercept_
 
     def run_epoch(self):
          
@@ -116,6 +148,9 @@ class Federated_SVM:
         #: Create/Update the aggregated global model
         if self.global_aggregation:
             self.aggregate_models()
+
+    def score_global_model(self):
+        return self.global_clf.score(self.X_test, self.y_test)
 
     def run_eon(self, n=1):
         while(n > 0):

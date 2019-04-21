@@ -1,5 +1,6 @@
 import idx2numpy
 import numpy as np
+import matplotlib.pyplot as plt
 
 from sklearn import linear_model
 from sklearn.datasets import load_digits
@@ -73,15 +74,16 @@ def mnist_digits():
     X_list = np.split(X[:n_datapoints], n_svm)
     y_list = np.split(y[:n_datapoints], n_svm)
 
-    #X_list = [X_list[0][:40], X_list[1][:500], X_list[2][:1000], X_list[3][:3000]]
-    #y_list = [y_list[0][:40], y_list[1][:500], y_list[2][:1000], y_list[3][:3000]]
+    X_list = [X_list[0][:40], X_list[1][:500], X_list[2][:1000], X_list[3][:3000]]
+    y_list = [y_list[0][:40], y_list[1][:500], y_list[2][:1000], y_list[3][:3000]]
     
     federation = Federated_SVM(
         X[n_datapoints:n_datapoints+1000],
         y[n_datapoints:n_datapoints+1000],
         X_test, 
         y_test, 
-        global_aggregation=True)
+        global_aggregation=False,
+        tol=0.0001)
 
     for i in range(n_svm):
         federation.add_participant(SVM(X_list[i], y_list[i], 5333, 1))
@@ -89,13 +91,18 @@ def mnist_digits():
     federation.run_eon(35)
 
     #print(y_list[1][:100])
-    print(1 - federation.all_scores)
+    print(federation.all_scores)
     conv_iter = federation.global_model_scores.index(
         max(federation.global_model_scores))
     print('Number of iterations until convergence:', conv_iter)
-    #print(federation.score_global_model(), 1 - federation.score_global_model())
+    print(federation.global_model_scores)
     #print(federation.federation[0].clf.n_iter)
     #print(X[:3][0])
+    plt.plot(federation.all_scores)
+    plt.axis([0,30, 0.5,1.0,])
+    plt.show()
     
 #scikit_digits()
+
 mnist_digits()
+

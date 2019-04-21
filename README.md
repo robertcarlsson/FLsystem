@@ -12,8 +12,12 @@ This does a user installation to prevent breaking any system-wide packages. If p
 $ pip install --user pipenv
 
 Upgrade:
+
 $ pip install --user --upgrade pipenv
 
 Using the existing pip-environment:
+
 $ pipenv install
+
 $ pipenv shell
+

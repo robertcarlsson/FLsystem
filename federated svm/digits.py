@@ -74,21 +74,22 @@ def mnist_digits():
     X_list = np.split(X[:n_datapoints], n_svm)
     y_list = np.split(y[:n_datapoints], n_svm)
 
-    X_list = [X_list[0][:40], X_list[1][:500], X_list[2][:1000], X_list[3][:3000]]
-    y_list = [y_list[0][:40], y_list[1][:500], y_list[2][:1000], y_list[3][:3000]]
+    X_list = [X_list[0][:40], X_list[1][:200], X_list[2][:2000], X_list[3][:6000]]
+    y_list = [y_list[0][:40], y_list[1][:200], y_list[2][:2000], y_list[3][:6000]]
     
     federation = Federated_SVM(
         X[n_datapoints:n_datapoints+1000],
         y[n_datapoints:n_datapoints+1000],
         X_test, 
         y_test, 
-        global_aggregation=False,
-        tol=0.0001)
+        aggregation_function='random',
+        tol=0.01)
 
     for i in range(n_svm):
         federation.add_participant(SVM(X_list[i], y_list[i], 5333, 1))
 
-    federation.run_eon(35)
+    n_epochs = 30
+    federation.run_eon(n_epochs=n_epochs)
 
     #print(y_list[1][:100])
     print(federation.all_scores)
@@ -99,7 +100,13 @@ def mnist_digits():
     #print(federation.federation[0].clf.n_iter)
     #print(X[:3][0])
     plt.plot(federation.all_scores)
-    plt.axis([0,30, 0.5,1.0,])
+    plt.axis([0,n_epochs-1, 0.5,1.0,])
+
+    plt.xlabel('Number of epochs')
+    plt.ylabel('Accuracy')
+
+    plt.title('Federated Random - Unbalanced Dataset')
+
     plt.show()
     
 #scikit_digits()

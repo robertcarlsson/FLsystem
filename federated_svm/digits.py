@@ -16,9 +16,11 @@ print ("This is the name of the script: ", sys.argv[0])
 print ("Number of arguments: ", len(sys.argv))
 print ("The arguments are: " , str(sys.argv))
 
-if (len(sys.argv) != 3):
+if (len(sys.argv) != 4):
     print ("This file needs these arguments:\n")
-    print ("n_datapoints \t\tNumber of datapoints \nn_device \t\tNumber of devices \nn_rounds \t\tNumber of rounds \nshared_init \t\tInitialization option, \"no\" or \"yes\" \n")
+    print ("Algorithm \t\t 1 - AVG, 2 - HIGH, 3 - RAND")
+    print ("Balanced dataset \t answer 'y' for yes")
+    print ("Number of Eons \t\t Digit from 2 - infinity")
     exit()
 
 
@@ -156,4 +158,4 @@ else:
 
 mnist_digits(number_of_devices=4, data_points=24000,
              algorithm=int(sys.argv[1]), balanced_dataset=balanced_dataset,
-             num_eons=13)
+             num_eons=int(sys.argv[3]))

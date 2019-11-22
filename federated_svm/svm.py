@@ -1,6 +1,7 @@
 # print(__name__)
 
 import numpy as np
+import random
 
 from copy import deepcopy
 
@@ -74,6 +75,7 @@ class Federated_SVM:
 
         self.federation = np.array([])
         self.all_scores = None
+        self.amount_devices = 0
 
         self.tol = tol
         self.global_model_scores = []
@@ -96,6 +98,7 @@ class Federated_SVM:
 
     def add_participant(self, participant):
         self.federation = np.append(self.federation, participant)
+        self.amount_devices += 1
 
     def _aggregate_highest(self):
         #: Go through the scores to select the model with
@@ -140,8 +143,13 @@ class Federated_SVM:
         temp_coef = self.federation[0].clf.coef_
         temp_intercept = self.federation[0].clf.intercept_
 
+        random_fed = self.federation.tolist()
+        random.shuffle(random_fed)
+
+        random_fed.pop()
+
         #: Calculate the federated avarage and update the global model
-        for svm in self.federation[1:]:
+        for svm in random_fed:
             temp_coef += svm.clf.coef_
             temp_intercept += svm.clf.intercept_
 
